@@ -1,0 +1,117 @@
+/* styles.css */
+body {
+  font-family: 'Arial', sans-serif;
+  margin: 0;
+  padding: 0;
+  background: #f0f4f8;
+  color: #333;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+.container {
+  width: 100%;
+  max-width: 400px;
+  background: #fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-radius: 15px;
+  overflow: hidden;
+}
+
+header {
+  background: #007aff;
+  color: white;
+  padding: 20px;
+  text-align: center;
+}
+
+header h1 {
+  font-size: 24px;
+  margin: 0;
+}
+
+section {
+  padding: 20px;
+}
+
+.hidden {
+  display: none;
+}
+
+.btn, .btn-confirm, .btn-secondary {
+  display: block;
+  width: 100%;
+  margin: 10px 0;
+  padding: 15px;
+  font-size: 16px;
+  color: white;
+  background: #007aff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: center;
+  transition: background 0.3s;
+}
+
+.btn-secondary {
+  background: #e0e0e0;
+  color: #333;
+}
+
+.btn:hover, .btn-confirm:hover {
+  background: #005bb5;
+}
+
+.calendar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  justify-content: center;
+}
+
+.calendar button {
+  width: 45px;
+  height: 45px;
+  background: #f0f4f8;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.calendar button:hover {
+  background: #007aff;
+  color: white;
+}
+
+.time-slots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  justify-content: center;
+}
+
+.time-slots button {
+  width: 60px;
+  height: 40px;
+  background: #f0f4f8;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.time-slots button:hover {
+  background: #007aff;
+  color: white;
+}
+
+footer {
+  text-align: center;
+  font-size: 14px;
+  padding: 10px;
+  background: #f0f4f8;
+}
