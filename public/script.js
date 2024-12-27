@@ -16,8 +16,8 @@ function openMyBooking() {
   }
 
 function renderMyBooking() {
-    document.innerHTML = "HAAHHAHAHAHAAH"
-    document.getElementById('booking-list').innerText = "HAHAHAHAHHAAH"
+    document.innerHTML = "Записи"
+    document.getElementById('booking-list').innerText = "Записи"
 }
 
 // Рендеринг календаря
