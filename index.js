@@ -8,7 +8,7 @@ const https = require('node:https');
 const fs = require('node:fs');
 
 const certDir = `/etc/letsencrypt/live`;
-const domain = `vitalykazantsev.me`;
+const domain = `fytt.tech`;
 
 app.use(express.static(`public`));
 app.use(express.json());
