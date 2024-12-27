@@ -13,7 +13,20 @@ const domain = `vitalykazantsev.me`;
 app.use(morgan("dev"));
 
 app.use(express.static(`public`));
-app.use(express.json());
+
+app.use(express.json())
+
+serverHttp.listen(4081, () => {
+  console.log(`HTTP server listening on port 4081`);
+}).on('error', (err) => {
+  console.error('HTTP server error:', err);
+});
+
+server.listen(4080, () => {
+  console.log(`HTTPS server listening on port 4080`);
+}).on('error', (err) => {
+  console.error('HTTPS server error:', err);
+});;
 
 app.get("/", (req, res) => {
   res.send("WELCOME TO THE BASIC EXPRESS APP WITH AN HTTPS SERVER");
