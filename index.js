@@ -2,7 +2,7 @@ const express = require(`express`);
 const app = express();
 const morgan = require("morgan");
 const dotenv = require("dotenv").config();
-const port = process.env.PORT || 4444;
+const port = process.env.PORT || 4480;
 
 const https = require('node:https');
 const fs = require('node:fs');
@@ -24,7 +24,7 @@ const options = {
 
 const server = https.createServer(options, app);
 
-server.listen(4444, () => {
+server.listen(4080, () => {
   console.log(`App listening on https://localhost:${port}`);
 });
 
