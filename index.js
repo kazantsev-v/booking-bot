@@ -16,17 +16,6 @@ app.use(express.static(`public`));
 
 app.use(express.json())
 
-serverHttp.listen(4081, () => {
-  console.log(`HTTP server listening on port 4081`);
-}).on('error', (err) => {
-  console.error('HTTP server error:', err);
-});
-
-server.listen(4080, () => {
-  console.log(`HTTPS server listening on port 4080`);
-}).on('error', (err) => {
-  console.error('HTTPS server error:', err);
-});;
 
 app.get("/", (req, res) => {
   res.send("WELCOME TO THE BASIC EXPRESS APP WITH AN HTTPS SERVER");
@@ -40,11 +29,18 @@ const options = {
 const server = https.createServer(options, app);
 const serverHttp = http.createServer(app)
 
-serverHttp.listen(4081, () => {});
-
-server.listen(4080, () => {
-  console.log(`App listening on https://localhost:${port}`);
-});
+serverHttp.listen(4081, () => {
+    console.log(`HTTP server listening on port 4081`);
+  }).on('error', (err) => {
+    console.error('HTTP server error:', err);
+  });
+  
+  server.listen(4080, () => {
+    console.log(`HTTPS server listening on port 4080`);
+  }).on('error', (err) => {
+    console.error('HTTPS server error:', err);
+  });;
+  
 
 /*let mongoose = require('mongoose');
 mongoose.connect('mongodb://91.108.243.98:27017/tgweb');
