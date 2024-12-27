@@ -2,13 +2,13 @@ const express = require(`express`);
 const app = express();
 const morgan = require("morgan");
 const dotenv = require("dotenv").config();
-const port = process.env.PORT || 4480;
+const port = process.env.PORT || 4080;
 
 const https = require('node:https');
 const fs = require('node:fs');
 
 const certDir = `/etc/letsencrypt/live`;
-const domain = `fytt.tech`;
+const domain = `vitalykazantsev.me`;
 
 app.use(express.static(`public`));
 app.use(express.json());
