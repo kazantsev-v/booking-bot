@@ -10,6 +10,8 @@ const fs = require('node:fs');
 const certDir = `/etc/letsencrypt/live`;
 const domain = `vitalykazantsev.me`;
 
+app.use(morgan("dev"));
+
 app.use(express.static(`public`));
 app.use(express.json());
 
