@@ -4,8 +4,6 @@ const morgan = require("morgan");
 const dotenv = require("dotenv").config();
 const port = process.env.PORT || 4444;
 
-dotenv.config();
-
 const https = require('node:https');
 const fs = require('node:fs');
 
