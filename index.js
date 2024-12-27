@@ -8,7 +8,7 @@ const https = require('node:https');
 const fs = require('node:fs');
 
 const certDir = `/etc/letsencrypt/live`;
-const domain = `why13idontknow.hopto.org`;
+const domain = `vitalykazantsev.me`;
 
 app.use(morgan("dev"));
 app.use(express.static(`public`));
