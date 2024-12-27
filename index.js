@@ -4,13 +4,14 @@ const morgan = require("morgan");
 const dotenv = require("dotenv").config();
 const port = process.env.PORT || 4444;
 
+dotenv.config();
+
 const https = require('node:https');
 const fs = require('node:fs');
 
 const certDir = `/etc/letsencrypt/live`;
 const domain = `vitalykazantsev.me`;
 
-app.use(morgan("dev"));
 app.use(express.static(`public`));
 app.use(express.json());
 
