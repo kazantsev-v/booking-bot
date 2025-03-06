@@ -1,5 +1,19 @@
+// public/script.js
+
 let selectedDate = null;
 let selectedTime = null;
+window.telegramUserId = null; // Глобальная переменная для хранения id пользователя
+
+// Функция синхронизации профиля Telegram
+function syncProfile() {
+  if (Telegram.WebApp && Telegram.WebApp.initDataUnsafe && Telegram.WebApp.initDataUnsafe.user) {
+    const user = Telegram.WebApp.initDataUnsafe.user;
+    window.telegramUserId = String(user.id);
+    alert(`Синхронизировано: ${user.first_name}`);
+  } else {
+    alert("Телеграм профиль не найден");
+  }
+}
 
 // Открытие раздела записаться
 function openBooking() {
@@ -8,16 +22,40 @@ function openBooking() {
   renderCalendar();
 }
 
-// Открытие раздела мои записи
+// Открытие раздела "Мои записи"
 function openMyBooking() {
-    document.getElementById('main-menu').classList.add('hidden');
-    document.getElementById('my-bookings-section').classList.remove('hidden');
-    renderMyBooking();
-  }
+  document.getElementById('main-menu').classList.add('hidden');
+  document.getElementById('my-bookings-section').classList.remove('hidden');
+  renderMyBooking();
+}
 
 function renderMyBooking() {
-    document.innerHTML = "Записи"
-    document.getElementById('booking-list').innerText = "Записи"
+  if (!window.telegramUserId) {
+    alert("Сначала синхронизируйте профиль");
+    return;
+  }
+  axios.get('/api/bookings', {
+    params: { telegramUserId: window.telegramUserId }
+  })
+  .then(response => {
+    const bookings = response.data;
+    const list = document.getElementById('booking-list');
+    list.innerHTML = '';
+    if (bookings.length === 0) {
+      list.innerHTML = '<li>Нет записей</li>';
+    } else {
+      bookings.forEach(booking => {
+        const li = document.createElement('li');
+        const bookingTime = new Date(booking.bookingTime);
+        li.textContent = bookingTime.toLocaleString();
+        list.appendChild(li);
+      });
+    }
+  })
+  .catch(error => {
+    console.error(error);
+    alert("Ошибка загрузки записей");
+  });
 }
 
 // Рендеринг календаря
@@ -51,7 +89,7 @@ function renderTimeSlots() {
   const timeText = document.getElementById('timeText');
   slotsContainer.innerHTML = '';
 
-  timeText.classList.remove('hidden')
+  timeText.classList.remove('hidden');
   timeSlots.forEach(slot => {
     const slotBtn = document.createElement('button');
     slotBtn.textContent = slot;
@@ -68,16 +106,9 @@ function selectTime(time, button) {
 
 // Подтверждение записи
 function confirmBooking() {
-  if (selectedDate && selectedTime) {
-    alert(`Вы записаны на ${selectedDate.toLocaleDateString()} в ${selectedTime}`);
-    goBack();
-  } else {
-    alert('Выберите дату и время');
-  }
-}
-
-// Возврат к меню
-function goBack() {
-  document.querySelectorAll('section').forEach(section => section.classList.add('hidden'));
-  document.getElementById('main-menu').classList.remove('hidden');
-}
+  if (selectedDate && selectedTime && window.telegramUserId) {
+    // Преобразуем дату в формат YYYY-MM-DD
+    const year = selectedDate.getFullYear();
+    const month = ('0' + (selectedDate.getMonth() + 1)).slice(-2);
+    const day = ('0' + selectedDate.getDate()).slice(-2);
+    const formattedDate = `${year}-${month}-${
