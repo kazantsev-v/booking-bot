@@ -19,7 +19,7 @@ app.use(morgan("dev"));
 app.use(express.static(`public`));
 app.use(express.json());
 
-// Создаем или открываем базу данных SQLite
+// Открываем или создаем базу данных SQLite
 const db = new sqlite3.Database('./bookings.db', (err) => {
   if (err) {
     console.error("Ошибка подключения к SQLite:", err);
@@ -28,17 +28,18 @@ const db = new sqlite3.Database('./bookings.db', (err) => {
   }
 });
 
-// Создаем таблицу bookings, если её ещё нет
+// Создаем таблицу bookings с колонкой systemId
 db.run(`CREATE TABLE IF NOT EXISTS bookings (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     telegramUserId TEXT NOT NULL,
+    systemId TEXT,
     bookingTime TEXT NOT NULL,
     createdAt TEXT DEFAULT CURRENT_TIMESTAMP
 )`, (err) => {
   if (err) console.error("Ошибка создания таблицы bookings:", err);
 });
 
-// Создаем таблицу systems для хранения информации о системах бронирования
+// Таблица systems для систем бронирования
 db.run(`CREATE TABLE IF NOT EXISTS systems (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     telegramUserId TEXT NOT NULL,
@@ -51,23 +52,23 @@ db.run(`CREATE TABLE IF NOT EXISTS systems (
   if (err) console.error("Ошибка создания таблицы systems:", err);
 });
 
-// Express API для создания брони (записи)
+// API для создания записи (бронирования)
 app.post('/api/bookings', (req, res) => {
-  const { telegramUserId, bookingDate, bookingTime } = req.body;
+  const { telegramUserId, systemId, bookingDate, bookingTime } = req.body;
   try {
     // Формируем дату-время записи (bookingDate в формате YYYY-MM-DD, bookingTime в формате HH:MM)
     const bookingDateTime = new Date(`${bookingDate}T${bookingTime}:00`);
     const bookingDateTimeString = bookingDateTime.toISOString();
 
     db.run(
-      `INSERT INTO bookings (telegramUserId, bookingTime) VALUES (?, ?)`,
-      [telegramUserId, bookingDateTimeString],
+      `INSERT INTO bookings (telegramUserId, systemId, bookingTime) VALUES (?, ?, ?)`,
+      [telegramUserId, systemId, bookingDateTimeString],
       function(err) {
         if (err) {
           console.error("Ошибка добавления записи:", err);
           res.status(500).json({ error: "Internal server error" });
         } else {
-          // Планирование уведомления за час до записи
+          // Планирование уведомления за час до записи (с учетом часового пояса Екатеринбурга)
           const notificationTime = new Date(bookingDateTime.getTime() - 60 * 60 * 1000);
           const delay = notificationTime.getTime() - Date.now();
           if (delay > 0) {
@@ -75,7 +76,7 @@ app.post('/api/bookings', (req, res) => {
               bot.telegram.sendMessage(telegramUserId, `Напоминание: Ваша запись запланирована на ${bookingDateTime.toLocaleString("ru-RU", {timeZone: "Asia/Yekaterinburg"})}.`);
             }, delay);
           }
-          res.status(201).json({ message: "Booking saved", booking: { id: this.lastID, telegramUserId, bookingTime: bookingDateTimeString } });
+          res.status(201).json({ message: "Booking saved", booking: { id: this.lastID, telegramUserId, systemId, bookingTime: bookingDateTimeString } });
         }
       }
     );
@@ -85,11 +86,11 @@ app.post('/api/bookings', (req, res) => {
   }
 });
 
-// Express API для получения записей по пользователю
+// API для получения записей по пользователю
 app.get('/api/bookings', (req, res) => {
   const { telegramUserId } = req.query;
   db.all(
-    `SELECT * FROM bookings WHERE telegramUserId = ? ORDER BY bookingTime ASC`,
+    `SELECT b.*, s.uniqueName as systemName FROM bookings b LEFT JOIN systems s ON b.systemId = s.id WHERE telegramUserId = ? ORDER BY bookingTime ASC`,
     [telegramUserId],
     (err, rows) => {
       if (err) {
@@ -97,6 +98,25 @@ app.get('/api/bookings', (req, res) => {
         res.status(500).json({ error: "Internal server error" });
       } else {
         res.json(rows);
+      }
+    }
+  );
+});
+
+// API для поиска системы по уникальному имени
+app.get('/api/systems', (req, res) => {
+  const { uniqueName } = req.query;
+  db.get(
+    `SELECT * FROM systems WHERE uniqueName = ?`,
+    [uniqueName],
+    (err, row) => {
+      if (err) {
+        console.error("Ошибка выборки системы:", err);
+        res.status(500).json({ error: "Internal server error" });
+      } else if (!row) {
+        res.status(404).json({ error: "System not found" });
+      } else {
+        res.json(row);
       }
     }
   );
@@ -127,29 +147,74 @@ server.listen(443, () => {
   console.error('HTTPS сервер ошибка:', err);
 });
 
-// --- Telegram Bot с использованием сцен --- //
+// --- Telegram Bot --- //
 
 const bot = new Telegraf(TELEGRAM_BOT_TOKEN);
 
-// Создаем wizard сцену для создания системы бронирования
+// Вспомогательная функция для генерации клавиатуры выбора дней на русском
+function getDaysKeyboard(selectedDays) {
+  const days = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
+  // Для каждого дня, если выбран — добавляем галочку
+  const buttons = days.map(day => {
+    const text = selectedDays.includes(day) ? `✅ ${day}` : day;
+    return Markup.button.callback(text, `toggle:${day}`);
+  });
+  // Кнопка "Готово" для завершения выбора
+  buttons.push(Markup.button.callback("Готово", "done"));
+  return Markup.inlineKeyboard(buttons, { columns: 3 });
+}
+
+// Создаем wizard-сцену для создания системы бронирования
 const createSystemWizard = new Scenes.WizardScene('createSystemWizard',
+  // Шаг 0: уникальное название системы
   async (ctx) => {
     await ctx.reply("Введите уникальное название системы (одно англ. слово):");
     return ctx.wizard.next();
   },
+  // Шаг 1: выбор дней недели через кнопки
   async (ctx) => {
-    const uniqueName = ctx.message.text;
-    ctx.wizard.state.system = { uniqueName };
-    await ctx.reply("Введите доступные дни записи в формате, например: Mon,Tue,Wed");
-    return ctx.wizard.next();
+    // Инициализируем массив выбранных дней
+    ctx.wizard.state.system = { availableDays: [] };
+    await ctx.reply("Выберите дни работы системы:", getDaysKeyboard(ctx.wizard.state.system.availableDays));
+    return; // Остаемся на этом шаге до получения callback
   },
+  // Шаг 1 callback обработчик для выбора дней
   async (ctx) => {
-    const daysText = ctx.message.text;
-    const availableDays = daysText.split(',').map(day => day.trim());
-    ctx.wizard.state.system.availableDays = availableDays;
+    if (ctx.callbackQuery) {
+      const data = ctx.callbackQuery.data;
+      if (data.startsWith("toggle:")) {
+        const day = data.split(":")[1];
+        const sel = ctx.wizard.state.system.availableDays;
+        if (sel.includes(day)) {
+          // Убираем день, если он уже выбран
+          ctx.wizard.state.system.availableDays = sel.filter(d => d !== day);
+        } else {
+          ctx.wizard.state.system.availableDays.push(day);
+        }
+        // Обновляем клавиатуру
+        await ctx.editMessageReplyMarkup(getDaysKeyboard(ctx.wizard.state.system.availableDays).reply_markup);
+        return; // Остаемся на шаге
+      } else if (data === "done") {
+        if (ctx.wizard.state.system.availableDays.length === 0) {
+          await ctx.answerCbQuery("Выберите хотя бы один день");
+          return;
+        }
+        await ctx.answerCbQuery("Дни выбраны");
+        await ctx.reply(`Выбраны дни: ${ctx.wizard.state.system.availableDays.join(", ")}`);
+        return ctx.wizard.next();
+      }
+    }
+  },
+  // Шаг 2: Ввод времени работы (диапазон)
+  async (ctx) => {
+    // Сохраняем уникальное название, введенное на шаге 0
+    if (!ctx.wizard.state.system.uniqueName) {
+      ctx.wizard.state.system.uniqueName = ctx.message.text;
+    }
     await ctx.reply("Введите время начала и окончания записи в формате HH:MM-HH:MM (например: 10:00-18:00):");
     return ctx.wizard.next();
   },
+  // Шаг 3: Сохранение системы
   async (ctx) => {
     const periodText = ctx.message.text;
     const parts = periodText.split('-');
@@ -163,12 +228,12 @@ const createSystemWizard = new Scenes.WizardScene('createSystemWizard',
     ctx.wizard.state.system.endTime = endTime;
 
     // Сохраняем систему в базе данных
-    const { uniqueName, availableDays } = ctx.wizard.state.system;
+    const { uniqueName, availableDays, startTime: st, endTime: et } = ctx.wizard.state.system;
     const telegramUserId = String(ctx.from.id);
     const createdAt = new Date().toISOString();
     db.run(
       `INSERT INTO systems (telegramUserId, uniqueName, availableDays, startTime, endTime, createdAt) VALUES (?, ?, ?, ?, ?, ?)`,
-      [telegramUserId, uniqueName, availableDays.join(','), startTime, endTime, createdAt],
+      [telegramUserId, uniqueName, availableDays.join(','), st, et, createdAt],
       function(err) {
         if (err) {
           console.error("Ошибка сохранения системы:", err);
@@ -187,7 +252,7 @@ const stage = new Scenes.Stage([createSystemWizard]);
 bot.use(session());
 bot.use(stage.middleware());
 
-// Команда /start – отправка приветственного сообщения с кнопками
+// При старте бота отправляем сообщение с двумя кнопками
 bot.start(async (ctx) => {
   const buttons = Markup.inlineKeyboard([
     Markup.button.callback('Записаться', 'book'),
@@ -201,20 +266,13 @@ bot.start(async (ctx) => {
   );
 });
 
-// Обработка нажатия кнопок
+// Обработка кнопки создания системы
 bot.action('create_system', async (ctx) => {
   await ctx.answerCbQuery();
   ctx.scene.enter('createSystemWizard');
 });
 
+// Обработка кнопки записи – отправляем ссылку на сайт
 bot.action('book', async (ctx) => {
   await ctx.answerCbQuery();
-  // Отправляем ссылку на сайт для записи (можно добавить query-параметры, если нужно)
   ctx.reply("Для записи перейдите по ссылке: https://vitalykazantsev.me");
-});
-
-bot.launch();
-
-// Остановка бота при завершении работы
-process.once('SIGINT', () => bot.stop('SIGINT'));
-process.once('SIGTERM', () => bot.stop('SIGTERM'));

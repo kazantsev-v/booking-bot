@@ -3,23 +3,52 @@
 let selectedDate = null;
 let selectedTime = null;
 window.telegramUserId = null; // Глобальная переменная для хранения id пользователя
+window.currentSystem = null;  // Текущая система, выбранная при поиске
+
+// Синхронизация профиля сразу при загрузке страницы
+document.addEventListener("DOMContentLoaded", () => {
+  syncProfile();
+});
 
 // Функция синхронизации профиля Telegram
 function syncProfile() {
   if (Telegram.WebApp && Telegram.WebApp.initDataUnsafe && Telegram.WebApp.initDataUnsafe.user) {
     const user = Telegram.WebApp.initDataUnsafe.user;
     window.telegramUserId = String(user.id);
-    alert(`Синхронизировано: ${user.first_name}`);
+    // Можно также отобразить имя пользователя на странице
+    console.log(`Синхронизировано: ${user.first_name}`);
   } else {
     alert("Телеграм профиль не найден");
   }
 }
 
-// Открытие раздела "Записаться"
-function openBooking() {
+// Открытие раздела "Поиск системы"
+function openSearchSystem() {
   document.getElementById('main-menu').classList.add('hidden');
-  document.getElementById('booking-section').classList.remove('hidden');
-  renderCalendar();
+  document.getElementById('search-system-section').classList.remove('hidden');
+}
+
+// Поиск системы по уникальному имени
+function searchSystem() {
+  const uniqueName = document.getElementById('system-search-input').value.trim();
+  if (!uniqueName) {
+    alert("Введите уникальное имя системы");
+    return;
+  }
+  axios.get('/api/systems', { params: { uniqueName } })
+    .then(response => {
+      window.currentSystem = response.data;
+      // Отобразим информацию о системе
+      document.getElementById('system-info').innerText = `Система: ${window.currentSystem.uniqueName}. Дни: ${window.currentSystem.availableDays}. Время: ${window.currentSystem.startTime}-${window.currentSystem.endTime}`;
+      // Переходим к разделу записи
+      document.getElementById('search-system-section').classList.add('hidden');
+      document.getElementById('booking-section').classList.remove('hidden');
+      renderCalendar();
+    })
+    .catch(error => {
+      console.error(error);
+      alert("Система не найдена");
+    });
 }
 
 // Открытие раздела "Мои записи"
@@ -46,9 +75,9 @@ function renderMyBooking() {
     } else {
       bookings.forEach(booking => {
         const li = document.createElement('li');
-        // Отображаем время с учетом часового пояса Екатеринбурга
         const bookingTime = new Date(booking.bookingTime);
-        li.textContent = bookingTime.toLocaleString("ru-RU", { timeZone: "Asia/Yekaterinburg" });
+        // Если есть привязка к системе, отображаем её уникальное имя
+        li.textContent = bookingTime.toLocaleString("ru-RU", { timeZone: "Asia/Yekaterinburg" }) + (booking.systemName ? ` (система: ${booking.systemName})` : "");
         list.appendChild(li);
       });
     }
@@ -59,17 +88,26 @@ function renderMyBooking() {
   });
 }
 
-// Рендеринг календаря с учетом часового пояса Екатеринбурга
+// Рендеринг календаря с учетом часового пояса Екатеринбурга и ограничений системы
 function renderCalendar() {
   const calendarContainer = document.getElementById('calendar-container');
   calendarContainer.innerHTML = '';
-  // Получаем текущую дату в часовом поясе Екатеринбурга
+  // Текущая дата в часовом поясе Екатеринбурга
   const todayEkb = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Yekaterinburg" }));
+  // Если система выбрана и заданы дни, отбираем только допустимые
+  const allowedDays = window.currentSystem ? window.currentSystem.availableDays.split(',').map(day => day.trim()) : null;
+  // Для сопоставления: 0=Вс, 1=Пн, 2=Вт, ..., 6=Сб
+  const dayNames = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
+  
   for (let i = 0; i < 30; i++) {
     const date = new Date(todayEkb);
     date.setDate(todayEkb.getDate() + i);
+    const dayAbbr = dayNames[date.getDay()];
+    // Если система выбрана, показываем только те дни, которые разрешены
+    if (allowedDays && !allowedDays.includes(dayAbbr)) continue;
+    
     const dateBtn = document.createElement('button');
-    dateBtn.textContent = `${date.getDate()}/${date.getMonth() + 1}`;
+    dateBtn.textContent = `${date.getDate()}/${date.getMonth() + 1} (${dayAbbr})`;
     dateBtn.onclick = () => selectDate(date, dateBtn);
     calendarContainer.appendChild(dateBtn);
   }
@@ -82,19 +120,21 @@ function selectDate(date, button) {
   renderTimeSlots();
 }
 
-// Пример отрисовки слотов времени с возможностью задать диапазон
+// Рендеринг слотов времени с учетом системы (если выбрана) или стандартно
 function renderTimeSlots() {
   const slotsContainer = document.getElementById('time-slots');
   const timeText = document.getElementById('timeText');
   slotsContainer.innerHTML = '';
   timeText.classList.remove('hidden');
 
-  // Пример: создаем слоты с интервалом 30 минут между 10:00 и 18:00
-  const startHour = 10;
-  const endHour = 18;
+  let startHour = 10, endHour = 18;
+  if (window.currentSystem) {
+    // Предполагаем, что время записано в формате HH:MM
+    startHour = parseInt(window.currentSystem.startTime.split(':')[0]);
+    endHour = parseInt(window.currentSystem.endTime.split(':')[0]);
+  }
   for (let hour = startHour; hour < endHour; hour++) {
     for (let min = 0; min < 60; min += 30) {
-      // Форматируем время с ведущими нулями
       const timeStr = ("0" + hour).slice(-2) + ":" + ("0" + min).slice(-2);
       const slotBtn = document.createElement('button');
       slotBtn.textContent = timeStr;
@@ -110,10 +150,9 @@ function selectTime(time, button) {
   button.classList.add('selected');
 }
 
-// Подтверждение записи с отправкой на сервер
+// Подтверждение записи с передачей systemId (если система выбрана)
 function confirmBooking() {
   if (selectedDate && selectedTime && window.telegramUserId) {
-    // Преобразуем дату в формат YYYY-MM-DD
     const year = selectedDate.getFullYear();
     const month = ('0' + (selectedDate.getMonth() + 1)).slice(-2);
     const day = ('0' + selectedDate.getDate()).slice(-2);
@@ -121,6 +160,7 @@ function confirmBooking() {
 
     axios.post('/api/bookings', {
       telegramUserId: window.telegramUserId,
+      systemId: window.currentSystem ? window.currentSystem.id : null,
       bookingDate: formattedDate,
       bookingTime: selectedTime
     })
@@ -141,4 +181,6 @@ function confirmBooking() {
 function goBack() {
   document.querySelectorAll('section').forEach(section => section.classList.add('hidden'));
   document.getElementById('main-menu').classList.remove('hidden');
+  // Сбрасываем текущую систему, если она была выбрана
+  window.currentSystem = null;
 }
