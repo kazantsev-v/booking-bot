@@ -14,11 +14,12 @@
     <!-- Шапка -->
     <header>
       <h1>ПростоЗапись</h1>
+      <!-- Кнопка синхронизации, на случай если авто не сработает -->
+      <button class="btn-small" onclick="syncProfile()">Синхронизировать профиль</button>
     </header>
 
     <!-- Главное меню -->
     <section id="main-menu">
-      <!-- Теперь кнопка "Записаться" открывает режим поиска системы -->
       <button class="btn" onclick="openSearchSystem()">Записаться</button>
       <button class="btn" onclick="openMyBooking()">Мои записи</button>
     </section>
@@ -26,8 +27,9 @@
     <!-- Раздел поиска системы -->
     <section id="search-system-section" class="hidden">
       <h2>Поиск системы бронирования</h2>
-      <input type="text" id="system-search-input" placeholder="Введите уникальное имя системы">
-      <button class="btn" onclick="searchSystem()">Найти систему</button>
+      <input type="text" id="system-search-input" placeholder="Введите часть названия системы">
+      <!-- Контейнер для отображения предложенных систем -->
+      <div id="suggestions"></div>
       <button class="btn-secondary" onclick="goBack()">Назад</button>
     </section>
 
