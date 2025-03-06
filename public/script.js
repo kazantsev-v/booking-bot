@@ -1,3 +1,5 @@
+// public/script.js
+
 let selectedDate = null;
 let selectedTime = null;
 window.telegramUserId = null; // Глобальная переменная для хранения id пользователя
@@ -13,7 +15,7 @@ function syncProfile() {
   }
 }
 
-// Открытие раздела записаться
+// Открытие раздела "Записаться"
 function openBooking() {
   document.getElementById('main-menu').classList.add('hidden');
   document.getElementById('booking-section').classList.remove('hidden');
@@ -44,8 +46,9 @@ function renderMyBooking() {
     } else {
       bookings.forEach(booking => {
         const li = document.createElement('li');
+        // Отображаем время с учетом часового пояса Екатеринбурга
         const bookingTime = new Date(booking.bookingTime);
-        li.textContent = bookingTime.toLocaleString();
+        li.textContent = bookingTime.toLocaleString("ru-RU", { timeZone: "Asia/Yekaterinburg" });
         list.appendChild(li);
       });
     }
@@ -56,16 +59,15 @@ function renderMyBooking() {
   });
 }
 
-// Рендеринг календаря
+// Рендеринг календаря с учетом часового пояса Екатеринбурга
 function renderCalendar() {
   const calendarContainer = document.getElementById('calendar-container');
   calendarContainer.innerHTML = '';
-
-  const today = new Date();
+  // Получаем текущую дату в часовом поясе Екатеринбурга
+  const todayEkb = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Yekaterinburg" }));
   for (let i = 0; i < 30; i++) {
-    const date = new Date(today);
-    date.setDate(today.getDate() + i);
-
+    const date = new Date(todayEkb);
+    date.setDate(todayEkb.getDate() + i);
     const dateBtn = document.createElement('button');
     dateBtn.textContent = `${date.getDate()}/${date.getMonth() + 1}`;
     dateBtn.onclick = () => selectDate(date, dateBtn);
@@ -80,20 +82,26 @@ function selectDate(date, button) {
   renderTimeSlots();
 }
 
-// Рендеринг слотов времени
+// Пример отрисовки слотов времени с возможностью задать диапазон
 function renderTimeSlots() {
-  const timeSlots = ['10:00', '11:00', '12:00', '13:00', '14:00'];
   const slotsContainer = document.getElementById('time-slots');
   const timeText = document.getElementById('timeText');
   slotsContainer.innerHTML = '';
-
   timeText.classList.remove('hidden');
-  timeSlots.forEach(slot => {
-    const slotBtn = document.createElement('button');
-    slotBtn.textContent = slot;
-    slotBtn.onclick = () => selectTime(slot, slotBtn);
-    slotsContainer.appendChild(slotBtn);
-  });
+
+  // Пример: создаем слоты с интервалом 30 минут между 10:00 и 18:00
+  const startHour = 10;
+  const endHour = 18;
+  for (let hour = startHour; hour < endHour; hour++) {
+    for (let min = 0; min < 60; min += 30) {
+      // Форматируем время с ведущими нулями
+      const timeStr = ("0" + hour).slice(-2) + ":" + ("0" + min).slice(-2);
+      const slotBtn = document.createElement('button');
+      slotBtn.textContent = timeStr;
+      slotBtn.onclick = () => selectTime(timeStr, slotBtn);
+      slotsContainer.appendChild(slotBtn);
+    }
+  }
 }
 
 function selectTime(time, button) {
@@ -102,7 +110,7 @@ function selectTime(time, button) {
   button.classList.add('selected');
 }
 
-// Подтверждение записи
+// Подтверждение записи с отправкой на сервер
 function confirmBooking() {
   if (selectedDate && selectedTime && window.telegramUserId) {
     // Преобразуем дату в формат YYYY-MM-DD
@@ -117,7 +125,7 @@ function confirmBooking() {
       bookingTime: selectedTime
     })
     .then(response => {
-      alert(`Запись подтверждена на ${selectedDate.toLocaleDateString()} в ${selectedTime}`);
+      alert(`Запись подтверждена на ${selectedDate.toLocaleDateString("ru-RU", { timeZone: "Asia/Yekaterinburg" })} в ${selectedTime}`);
       goBack();
     })
     .catch(error => {
@@ -129,7 +137,7 @@ function confirmBooking() {
   }
 }
 
-// Возврат к меню
+// Возврат к главному меню
 function goBack() {
   document.querySelectorAll('section').forEach(section => section.classList.add('hidden'));
   document.getElementById('main-menu').classList.remove('hidden');
