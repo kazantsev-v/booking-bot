@@ -1,117 +1,388 @@
-/* styles.css */
-body {
-  font-family: 'Arial', sans-serif;
-  margin: 0;
-  padding: 0;
-  background: #f0f4f8;
-  color: #333;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-}
-
-.container {
-  width: 100%;
-  max-width: 400px;
-  background: #fff;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  border-radius: 15px;
-  overflow: hidden;
-}
-
-header {
-  background: #007aff;
-  color: white;
-  padding: 20px;
-  text-align: center;
-}
-
-header h1 {
-  font-size: 24px;
-  margin: 0;
-}
-
-section {
-  padding: 20px;
-}
-
-.hidden {
-  display: none;
-}
-
-.btn, .btn-confirm, .btn-secondary {
-  display: block;
-  width: 100%;
-  margin: 10px 0;
-  padding: 15px;
-  font-size: 16px;
-  color: white;
-  background: #007aff;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  text-align: center;
-  transition: background 0.3s;
-}
-
-.btn-secondary {
-  background: #e0e0e0;
-  color: #333;
-}
-
-.btn:hover, .btn-confirm:hover {
-  background: #005bb5;
-}
-
-.calendar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-  justify-content: center;
-}
-
-.calendar button {
-  width: 45px;
-  height: 45px;
-  background: #f0f4f8;
-  border: 1px solid #ddd;
-  border-radius: 10px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: all 0.2s;
-}
-
-.calendar button:hover {
-  background: #007aff;
-  color: white;
-}
-
-.time-slots {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-  justify-content: center;
-}
-
-.time-slots button {
-  width: 60px;
-  height: 40px;
-  background: #f0f4f8;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.time-slots button:hover {
-  background: #007aff;
-  color: white;
-}
-
-footer {
-  text-align: center;
-  font-size: 14px;
-  padding: 10px;
-  background: #f0f4f8;
-}
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Roboto', Arial, sans-serif;
+  }
+  
+  body {
+    background-color: #f5f5f5;
+    color: #333;
+    line-height: 1.6;
+  }
+  
+  .container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+    background: #fff;
+    min-height: 100vh;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  header {
+    margin-bottom: 30px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  header h1 {
+    color: #3498db;
+    font-size: 24px;
+  }
+  
+  .user-info {
+    text-align: right;
+    font-size: 14px;
+  }
+  
+  #user-welcome {
+    font-weight: bold;
+    margin-bottom: 5px;
+  }
+  
+  #sync-status {
+    color: #e74c3c;
+    font-size: 12px;
+  }
+  
+  #sync-status.synced {
+    color: #2ecc71;
+  }
+  
+  h2 {
+    margin-bottom: 20px;
+    color: #2c3e50;
+    font-size: 20px;
+  }
+  
+  h3 {
+    margin: 15px 0 10px;
+    color: #3498db;
+    font-size: 18px;
+  }
+  
+  .hidden {
+    display: none;
+  }
+  
+  /* Стили для приветственного экрана */
+  .welcome-message {
+    text-align: center;
+    margin-bottom: 30px;
+    padding: 20px;
+    background: #f9f9f9;
+    border-radius: 10px;
+  }
+  
+  .welcome-message p {
+    color: #7f8c8d;
+    margin-top: 10px;
+  }
+  
+  .main-buttons {
+    display: grid;
+    grid-gap: 15px;
+    margin-bottom: 30px;
+  }
+  
+  .btn {
+    display: block;
+    width: 100%;
+    padding: 12px;
+    background: #3498db;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background 0.3s;
+    text-align: center;
+  }
+  
+  .btn:hover {
+    background: #2980b9;
+  }
+  
+  .main-btn {
+    font-size: 18px;
+    padding: 15px;
+  }
+  
+  .secondary-btn {
+    background: #95a5a6;
+  }
+  
+  .secondary-btn:hover {
+    background: #7f8c8d;
+  }
+  
+  /* Стили для поиска систем */
+  .search-container {
+    display: flex;
+    margin-bottom: 20px;
+  }
+  
+  #system-search {
+    flex-grow: 1;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px 0 0 5px;
+    font-size: 16px;
+  }
+  
+  .btn-search {
+    padding: 10px 15px;
+    background: #3498db;
+    color: #fff;
+    border: none;
+    border-radius: 0 5px 5px 0;
+    cursor: pointer;
+  }
+  
+  /* Стили для карточек систем бронирования */
+  .systems-grid {
+    display: grid;
+    grid-gap: 15px;
+    margin-bottom: 20px;
+  }
+  
+  .system-card {
+    background: #f9f9f9;
+    border-radius: 5px;
+    padding: 15px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  
+  .system-card h3 {
+    margin-top: 0;
+    color: #3498db;
+  }
+  
+  .system-card p {
+    margin: 8px 0;
+    font-size: 14px;
+    color: #7f8c8d;
+  }
+  
+  .btn-select {
+    width: 100%;
+    margin-top: 10px;
+    padding: 8px;
+    background: #2ecc71;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.3s;
+  }
+  
+  .btn-select:hover {
+    background: #27ae60;
+  }
+  
+  /* Стили для форм */
+  .form-group {
+    margin-bottom: 20px;
+  }
+  
+  .form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+    color: #2c3e50;
+  }
+  
+  .form-group input[type="text"],
+  .form-group input[type="time"] {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+  }
+  
+  .checkbox-group {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-gap: 10px;
+  }
+  
+  .checkbox-group label {
+    display: flex;
+    align-items: center;
+    font-weight: normal;
+  }
+  
+  .checkbox-group input {
+    margin-right: 8px;
+  }
+  
+  .time-range {
+    display: flex;
+    justify-content: space-between;
+  }
+  
+  .time-range > div {
+    width: 48%;
+  }
+  
+  .form-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+  }
+  
+  .btn-create {
+    padding: 12px 20px;
+    background: #2ecc71;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    flex: 1;
+  }
+  
+  .btn-create:hover {
+    background: #27ae60;
+  }
+  
+  .btn-cancel, .btn-secondary {
+    padding: 12px 20px;
+    background: #95a5a6;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    flex: 1;
+  }
+  
+  .btn-cancel:hover, .btn-secondary:hover {
+    background: #7f8c8d;
+  }
+  
+  /* Стили для календаря */
+  .calendar {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    grid-gap: 5px;
+    margin-bottom: 20px;
+  }
+  
+  .date-btn {
+    padding: 10px 5px;
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    cursor: pointer;
+    text-align: center;
+  }
+  
+  .date-btn:hover {
+    background: #e0f7fa;
+  }
+  
+  .date-btn.selected {
+    background: #3498db;
+    color: #fff;
+    border-color: #3498db;
+  }
+  
+  .date-btn.disabled {
+    background: #f1f1f1;
+    color: #ccc;
+    cursor: not-allowed;
+    border-color: #eee;
+  }
+  
+  /* Стили для слотов времени */
+  .time-slots {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-gap: 10px;
+    margin-bottom: 20px;
+  }
+  
+  .time-btn {
+    padding: 10px 5px;
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    cursor: pointer;
+    text-align: center;
+  }
+  
+  .time-btn:hover {
+    background: #e0f7fa;
+  }
+  
+  .time-btn.selected {
+    background: #3498db;
+    color: #fff;
+    border-color: #3498db;
+  }
+  
+  /* Стили для списка моих записей */
+  .bookings-list {
+    list-style: none;
+    margin-bottom: 20px;
+  }
+  
+  .booking-item {
+    padding: 15px;
+    margin-bottom: 10px;
+    background: #f9f9f9;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  
+  .booking-system {
+    font-weight: bold;
+    color: #3498db;
+    margin-bottom: 5px;
+  }
+  
+  .booking-time {
+    color: #7f8c8d;
+    font-size: 14px;
+  }
+  
+  .loading, .no-results, .error, .no-bookings {
+    padding: 20px;
+    text-align: center;
+    color: #7f8c8d;
+  }
+  
+  .error {
+    color: #e74c3c;
+  }
+  
+  .btn-confirm {
+    padding: 12px 20px;
+    background: #2ecc71;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    flex: 1;
+  }
+  
+  .btn-confirm:hover {
+    background: #27ae60;
+  }
+  
+  @media (max-width: 480px) {
+    .checkbox-group {
+      grid-template-columns: 1fr;
+    }
+    
+    .time-slots {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
