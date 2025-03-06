@@ -37,15 +37,30 @@ const db = new sqlite3.Database('./bookings.db', (err) => {
   }
 });
 
-// Создаем таблицу bookings, если её ещё нет
+// Создаем таблицу bookings (с полем bookingSystemId для связи с системой бронирования)
 db.run(`CREATE TABLE IF NOT EXISTS bookings (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     telegramUserId TEXT NOT NULL,
     bookingTime TEXT NOT NULL,
+    bookingSystemId INTEGER,
     createdAt TEXT DEFAULT CURRENT_TIMESTAMP
 )`, (err) => {
     if (err) {
       console.error("Ошибка создания таблицы bookings:", err);
+    }
+});
+
+// Создаем таблицу booking_systems для хранения систем бронирования
+db.run(`CREATE TABLE IF NOT EXISTS booking_systems (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT UNIQUE NOT NULL,
+    availableDays TEXT NOT NULL,
+    startTime TEXT NOT NULL,
+    endTime TEXT NOT NULL,
+    createdAt TEXT DEFAULT CURRENT_TIMESTAMP
+)`, (err) => {
+    if (err) {
+      console.error("Ошибка создания таблицы booking_systems:", err);
     }
 });
 
@@ -54,18 +69,60 @@ app.get("/", (req, res) => {
   res.send("WELCOME TO THE BASIC EXPRESS APP WITH AN HTTPS SERVER");
 });
 
+// API для создания системы бронирования
+app.post('/api/booking-systems', (req, res) => {
+  const { name, availableDays, startTime, endTime } = req.body;
+  // Преобразуем availableDays (массив) в строку, например "1,2,3"
+  const availableDaysStr = Array.isArray(availableDays) ? availableDays.join(',') : availableDays;
+  db.run(
+    `INSERT INTO booking_systems (name, availableDays, startTime, endTime) VALUES (?, ?, ?, ?)`,
+    [name, availableDaysStr, startTime, endTime],
+    function(err) {
+      if (err) {
+        console.error("Ошибка создания системы бронирования:", err);
+        res.status(500).json({ error: "Internal server error" });
+      } else {
+        res.status(201).json({ 
+          message: "Система бронирования создана", 
+          system: { id: this.lastID, name, availableDays: availableDaysStr, startTime, endTime } 
+        });
+      }
+    }
+  );
+});
+
+// API для получения систем бронирования (с поиском по названию)
+app.get('/api/booking-systems', (req, res) => {
+  const { q } = req.query;
+  let sql = "SELECT * FROM booking_systems";
+  let params = [];
+  if (q) {
+    sql += " WHERE name LIKE ?";
+    params.push(`%${q}%`);
+  }
+  sql += " ORDER BY createdAt DESC";
+  db.all(sql, params, (err, rows) => {
+    if (err) {
+      console.error("Ошибка получения систем бронирования:", err);
+      res.status(500).json({ error: "Internal server error" });
+    } else {
+      res.json(rows);
+    }
+  });
+});
+
 // API для создания записи
 app.post('/api/bookings', (req, res) => {
-  const { telegramUserId, bookingDate, bookingTime } = req.body;
+  const { telegramUserId, bookingDate, bookingTime, bookingSystemId } = req.body;
   try {
     // Формируем дату-время записи (bookingDate в формате YYYY-MM-DD, bookingTime в формате HH:MM)
     const bookingDateTime = new Date(`${bookingDate}T${bookingTime}:00`);
     const bookingDateTimeString = bookingDateTime.toISOString();
     
-    // Вставляем запись в таблицу SQLite
+    // Вставляем запись в таблицу bookings, учитывая bookingSystemId
     db.run(
-      `INSERT INTO bookings (telegramUserId, bookingTime) VALUES (?, ?)`,
-      [telegramUserId, bookingDateTimeString],
+      `INSERT INTO bookings (telegramUserId, bookingTime, bookingSystemId) VALUES (?, ?, ?)`,
+      [telegramUserId, bookingDateTimeString, bookingSystemId],
       function(err) {
         if (err) {
           console.error("Ошибка добавления записи:", err);
@@ -80,7 +137,10 @@ app.post('/api/bookings', (req, res) => {
               bot.telegram.sendMessage(telegramUserId, `Напоминание: Ваша запись запланирована на ${bookingDateTime.toLocaleString()}.`);
             }, delay);
           }
-          res.status(201).json({ message: "Booking saved", booking: { id: insertedId, telegramUserId, bookingTime: bookingDateTimeString } });
+          res.status(201).json({ 
+            message: "Booking saved", 
+            booking: { id: insertedId, telegramUserId, bookingTime: bookingDateTimeString, bookingSystemId } 
+          });
         }
       }
     );
