@@ -1,5 +1,3 @@
-// public/script.js
-
 let selectedDate = null;
 let selectedTime = null;
 window.telegramUserId = null; // Глобальная переменная для хранения id пользователя
@@ -111,4 +109,28 @@ function confirmBooking() {
     const year = selectedDate.getFullYear();
     const month = ('0' + (selectedDate.getMonth() + 1)).slice(-2);
     const day = ('0' + selectedDate.getDate()).slice(-2);
-    const formattedDate = `${year}-${month}-${
+    const formattedDate = `${year}-${month}-${day}`;
+
+    axios.post('/api/bookings', {
+      telegramUserId: window.telegramUserId,
+      bookingDate: formattedDate,
+      bookingTime: selectedTime
+    })
+    .then(response => {
+      alert(`Запись подтверждена на ${selectedDate.toLocaleDateString()} в ${selectedTime}`);
+      goBack();
+    })
+    .catch(error => {
+      console.error(error);
+      alert("Ошибка записи");
+    });
+  } else {
+    alert('Сначала синхронизируйте профиль и выберите дату и время');
+  }
+}
+
+// Возврат к меню
+function goBack() {
+  document.querySelectorAll('section').forEach(section => section.classList.add('hidden'));
+  document.getElementById('main-menu').classList.remove('hidden');
+}
