@@ -276,3 +276,10 @@ bot.action('create_system', async (ctx) => {
 bot.action('book', async (ctx) => {
   await ctx.answerCbQuery();
   ctx.reply("Для записи перейдите по ссылке: https://vitalykazantsev.me");
+});
+
+bot.launch();
+
+// Остановка бота при завершении работы
+process.once('SIGINT', () => bot.stop('SIGINT'));
+process.once('SIGTERM', () => bot.stop('SIGTERM'));
