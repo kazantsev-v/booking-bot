@@ -2,78 +2,22 @@
 
 let selectedDate = null;
 let selectedTime = null;
-window.telegramUserId = null; // Идентификатор пользователя из Telegram
-window.currentSystem = null;  // Текущая выбранная система
-
-// Автоматическая синхронизация профиля при загрузке страницы
-document.addEventListener("DOMContentLoaded", () => {
-  syncProfile();
-});
+window.telegramUserId = null; // Глобальная переменная для хранения id пользователя
 
 // Функция синхронизации профиля Telegram
 function syncProfile() {
   if (Telegram.WebApp && Telegram.WebApp.initDataUnsafe && Telegram.WebApp.initDataUnsafe.user) {
     const user = Telegram.WebApp.initDataUnsafe.user;
     window.telegramUserId = String(user.id);
-    console.log(`Синхронизировано: ${user.first_name}`);
+    alert(`Синхронизировано: ${user.first_name}`);
   } else {
-    alert("Телеграм профиль не найден. Попробуйте синхронизировать вручную.");
+    alert("Телеграм профиль не найден");
   }
 }
 
-// Открытие раздела "Поиск системы"
-function openSearchSystem() {
+// Открытие раздела записаться
+function openBooking() {
   document.getElementById('main-menu').classList.add('hidden');
-  document.getElementById('search-system-section').classList.remove('hidden');
-}
-
-// Реализация современного поиска с автодополнением
-const searchInput = document.getElementById("system-search-input");
-searchInput.addEventListener("input", function() {
-  const query = this.value.trim();
-  if(query.length < 2) {
-    clearSuggestions();
-    return;
-  }
-  axios.get('/api/systems/suggest', { params: { query } })
-    .then(response => {
-      showSuggestions(response.data);
-    })
-    .catch(error => console.error(error));
-});
-
-function showSuggestions(suggestions) {
-  const suggestionsDiv = document.getElementById("suggestions");
-  suggestionsDiv.innerHTML = "";
-  if(suggestions.length === 0) return;
-  suggestions.forEach(system => {
-    const div = document.createElement("div");
-    div.classList.add("suggestion-item");
-    div.innerText = system.uniqueName;
-    div.onclick = () => {
-      // При выборе системы заполняем поле и сохраняем систему
-      document.getElementById("system-search-input").value = system.uniqueName;
-      window.currentSystem = system;
-      suggestionsDiv.innerHTML = "";
-      openBookingForSystem();
-    };
-    suggestionsDiv.appendChild(div);
-  });
-}
-
-function clearSuggestions() {
-  document.getElementById("suggestions").innerHTML = "";
-}
-
-// После выбора системы переходим в режим записи
-function openBookingForSystem() {
-  if (!window.currentSystem) {
-    alert("Система не выбрана");
-    return;
-  }
-  document.getElementById('search-system-section').classList.add('hidden');
-  // Отобразим информацию о системе
-  document.getElementById('system-info').innerText = `Система: ${window.currentSystem.uniqueName}. Дни: ${window.currentSystem.availableDays}. Время: ${window.currentSystem.startTime}-${window.currentSystem.endTime}`;
   document.getElementById('booking-section').classList.remove('hidden');
   renderCalendar();
 }
@@ -103,8 +47,7 @@ function renderMyBooking() {
       bookings.forEach(booking => {
         const li = document.createElement('li');
         const bookingTime = new Date(booking.bookingTime);
-        li.textContent = bookingTime.toLocaleString("ru-RU", { timeZone: "Asia/Yekaterinburg" }) +
-          (booking.systemName ? ` (система: ${booking.systemName})` : "");
+        li.textContent = bookingTime.toLocaleString();
         list.appendChild(li);
       });
     }
@@ -115,21 +58,18 @@ function renderMyBooking() {
   });
 }
 
-// Рендеринг календаря с учётом часового пояса Екатеринбурга и допустимых дней системы
+// Рендеринг календаря
 function renderCalendar() {
   const calendarContainer = document.getElementById('calendar-container');
   calendarContainer.innerHTML = '';
-  const todayEkb = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Yekaterinburg" }));
-  const allowedDays = window.currentSystem ? window.currentSystem.availableDays.split(',').map(day => day.trim()) : null;
-  const dayNames = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
-  
+
+  const today = new Date();
   for (let i = 0; i < 30; i++) {
-    const date = new Date(todayEkb);
-    date.setDate(todayEkb.getDate() + i);
-    const dayAbbr = dayNames[date.getDay()];
-    if (allowedDays && !allowedDays.includes(dayAbbr)) continue;
+    const date = new Date(today);
+    date.setDate(today.getDate() + i);
+
     const dateBtn = document.createElement('button');
-    dateBtn.textContent = `${date.getDate()}/${date.getMonth() + 1} (${dayAbbr})`;
+    dateBtn.textContent = `${date.getDate()}/${date.getMonth() + 1}`;
     dateBtn.onclick = () => selectDate(date, dateBtn);
     calendarContainer.appendChild(dateBtn);
   }
@@ -142,27 +82,20 @@ function selectDate(date, button) {
   renderTimeSlots();
 }
 
-// Рендеринг временных слотов с учетом диапазона системы
+// Рендеринг слотов времени
 function renderTimeSlots() {
+  const timeSlots = ['10:00', '11:00', '12:00', '13:00', '14:00'];
   const slotsContainer = document.getElementById('time-slots');
   const timeText = document.getElementById('timeText');
   slotsContainer.innerHTML = '';
-  timeText.classList.remove('hidden');
 
-  let startHour = 10, endHour = 18;
-  if (window.currentSystem) {
-    startHour = parseInt(window.currentSystem.startTime.split(':')[0]);
-    endHour = parseInt(window.currentSystem.endTime.split(':')[0]);
-  }
-  for (let hour = startHour; hour < endHour; hour++) {
-    for (let min = 0; min < 60; min += 30) {
-      const timeStr = ("0" + hour).slice(-2) + ":" + ("0" + min).slice(-2);
-      const slotBtn = document.createElement('button');
-      slotBtn.textContent = timeStr;
-      slotBtn.onclick = () => selectTime(timeStr, slotBtn);
-      slotsContainer.appendChild(slotBtn);
-    }
-  }
+  timeText.classList.remove('hidden');
+  timeSlots.forEach(slot => {
+    const slotBtn = document.createElement('button');
+    slotBtn.textContent = slot;
+    slotBtn.onclick = () => selectTime(slot, slotBtn);
+    slotsContainer.appendChild(slotBtn);
+  });
 }
 
 function selectTime(time, button) {
@@ -171,21 +104,22 @@ function selectTime(time, button) {
   button.classList.add('selected');
 }
 
-// Подтверждение записи – отправка данных на сервер
+// Подтверждение записи
 function confirmBooking() {
   if (selectedDate && selectedTime && window.telegramUserId) {
+    // Преобразуем дату в формат YYYY-MM-DD
     const year = selectedDate.getFullYear();
     const month = ('0' + (selectedDate.getMonth() + 1)).slice(-2);
     const day = ('0' + selectedDate.getDate()).slice(-2);
     const formattedDate = `${year}-${month}-${day}`;
+
     axios.post('/api/bookings', {
       telegramUserId: window.telegramUserId,
-      systemId: window.currentSystem ? window.currentSystem.id : null,
       bookingDate: formattedDate,
       bookingTime: selectedTime
     })
     .then(response => {
-      alert(`Запись подтверждена на ${selectedDate.toLocaleDateString("ru-RU", { timeZone: "Asia/Yekaterinburg" })} в ${selectedTime}`);
+      alert(`Запись подтверждена на ${selectedDate.toLocaleDateString()} в ${selectedTime}`);
       goBack();
     })
     .catch(error => {
@@ -197,9 +131,8 @@ function confirmBooking() {
   }
 }
 
-// Возврат к главному меню
+// Возврат к меню
 function goBack() {
   document.querySelectorAll('section').forEach(section => section.classList.add('hidden'));
   document.getElementById('main-menu').classList.remove('hidden');
-  window.currentSystem = null;
 }

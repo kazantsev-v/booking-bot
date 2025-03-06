@@ -1,54 +1,45 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ПростоЗапись</title>
-  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <link rel="stylesheet" href="style.css">
-  <script src="script.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="script.js" defer></script>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="container">
-    <!-- Шапка -->
-    <header>
-      <h1>ПростоЗапись</h1>
-      <!-- Кнопка синхронизации, на случай если авто не сработает -->
-      <button class="btn-small" onclick="syncProfile()">Синхронизировать профиль</button>
-    </header>
-
-    <!-- Главное меню -->
-    <section id="main-menu">
-      <button class="btn" onclick="openSearchSystem()">Записаться</button>
-      <button class="btn" onclick="openMyBooking()">Мои записи</button>
-    </section>
-
-    <!-- Раздел поиска системы -->
-    <section id="search-system-section" class="hidden">
-      <h2>Поиск системы бронирования</h2>
-      <input type="text" id="system-search-input" placeholder="Введите часть названия системы">
-      <!-- Контейнер для отображения предложенных систем -->
-      <div id="suggestions"></div>
-      <button class="btn-secondary" onclick="goBack()">Назад</button>
-    </section>
-
-    <!-- Раздел записи (интерфейс для выбранной системы) -->
-    <section id="booking-section" class="hidden">
-      <h2 id="system-info"></h2>
-      <div id="calendar-container" class="calendar"></div>
-      <h2 id="timeText" class="hidden">Выберите время:</h2>
-      <div id="time-slots" class="time-slots"></div>
-      <button class="btn-confirm" onclick="confirmBooking()">Подтвердить</button>
-      <button class="btn-secondary" onclick="goBack()">Назад</button>
-    </section>
-
-    <!-- Раздел "Мои записи" -->
-    <section id="my-bookings-section" class="hidden">
-      <h2>Мои записи</h2>
-      <ul id="booking-list"></ul>
-      <button class="btn-secondary" onclick="goBack()">Назад</button>
-    </section>
-  </div>
+    <div class="container">
+      <!-- Шапка -->
+      <header>
+        <h1>ПростоЗапись</h1>
+      </header>
+  
+      <!-- Главное меню -->
+      <section id="main-menu">
+        <button class="btn" onclick="openBooking()">Записаться</button>
+        <button class="btn" onclick="openMyBooking()">Мои записи</button>
+        <button class="btn" onclick="syncProfile()">Синхронизация</button>
+      </section>
+  
+      <!-- Календарь и время записи -->
+      <section id="booking-section" class="hidden">
+        <h2>Выберите дату:</h2>
+        <div id="calendar-container" class="calendar"></div>
+        <h2 id="timeText" class="hidden">Выберите время:</h2>
+        <div id="time-slots" class="time-slots"></div>
+        <button class="btn-confirm" onclick="confirmBooking()">Подтвердить</button>
+        <button class="btn-secondary" onclick="goBack()">Назад</button>
+      </section>
+  
+      <!-- Список записей -->
+      <section id="my-bookings-section" class="hidden">
+        <h2>Мои записи</h2>
+        <ul id="booking-list"></ul>
+        <button class="btn-secondary" onclick="goBack()">Назад</button>
+      </section>
+    </div>
+    <script src="script.js"></script>
 </body>
 </html>
