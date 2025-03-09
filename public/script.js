@@ -224,7 +224,7 @@ function renderMyBookings() {
           const hours = ('0' + bookingDate.getHours()).slice(-2);
           const minutes = ('0' + bookingDate.getMinutes()).slice(-2);
           
-          formattedDate = `${day}.${month}.${year} ${hours}:${minutes}`;
+          formattedDate = `${day}.${month}.${year} ${hours-5}:${minutes}`;
         }
         
         // Определяем, прошла ли запись по текущей дате
