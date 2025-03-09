@@ -203,14 +203,16 @@ function renderMyBookings() {
         const li = document.createElement('li');
         li.className = 'booking-item';
       
+        // Используем дату, как есть из базы
         const bookingTime = new Date(booking.bookingTime);
         const systemName = booking.systemName || 'Неизвестная система';
       
         const now = new Date();
         const isPast = bookingTime < now;
       
+        // Форматируем без изменения временной зоны
         const ekbTime = new Intl.DateTimeFormat('ru-RU', {
-          timeZone: 'Asia/Yekaterinburg',
+          timeZone: 'Asia/Yekaterinburg', // Отображаем в Екб, но не меняем саму дату
           year: 'numeric',
           month: 'long',
           day: 'numeric',
@@ -227,7 +229,7 @@ function renderMyBookings() {
         `;
       
         bookingsList.appendChild(li);
-      });
+      });      
   })
   .catch(error => {
     console.error("Ошибка загрузки записей:", error);
