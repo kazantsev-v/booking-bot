@@ -200,24 +200,34 @@ function renderMyBookings() {
     }
     
     bookings.forEach(booking => {
-      const li = document.createElement('li');
-      li.className = 'booking-item';
+        const li = document.createElement('li');
+        li.className = 'booking-item';
       
-      const bookingTime = new Date(booking.bookingTime);
-      const systemName = booking.systemName || 'Неизвестная система';
+        const bookingTime = new Date(booking.bookingTime);
+        const systemName = booking.systemName || 'Неизвестная система';
       
-      const now = new Date();
-      const isPast = bookingTime < now;
+        const now = new Date();
+        const isPast = bookingTime < now;
       
-      li.innerHTML = `
-        <div class="booking-system">${systemName}</div>
-        <div class="booking-time">${bookingTime.toLocaleString()}</div>
-        <div class="booking-status ${isPast ? 'past' : 'upcoming'}">${isPast ? 'Завершена' : 'Предстоит'}</div>
-        ${!isPast ? `<button class="btn-cancel-booking" onclick="cancelBooking(${booking.id})">Отменить</button>` : ''}
-      `;
+        const ekbTime = new Intl.DateTimeFormat('ru-RU', {
+          timeZone: 'Asia/Yekaterinburg',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit'
+        }).format(bookingTime);
       
-      bookingsList.appendChild(li);
-    });
+        li.innerHTML = `
+          <div class="booking-system">${systemName}</div>
+          <div class="booking-time">${ekbTime}</div>
+          <div class="booking-status ${isPast ? 'past' : 'upcoming'}">${isPast ? 'Завершена' : 'Предстоит'}</div>
+          ${!isPast ? `<button class="btn-cancel-booking" onclick="cancelBooking(${booking.id})">Отменить</button>` : ''}
+        `;
+      
+        bookingsList.appendChild(li);
+      });
   })
   .catch(error => {
     console.error("Ошибка загрузки записей:", error);
