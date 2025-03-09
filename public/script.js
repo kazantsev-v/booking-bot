@@ -206,9 +206,14 @@ function renderMyBookings() {
       const bookingTime = new Date(booking.bookingTime);
       const systemName = booking.systemName || 'Неизвестная система';
       
+      const now = new Date();
+      const isPast = bookingTime < now;
+      
       li.innerHTML = `
         <div class="booking-system">${systemName}</div>
         <div class="booking-time">${bookingTime.toLocaleString()}</div>
+        <div class="booking-status ${isPast ? 'past' : 'upcoming'}">${isPast ? 'Завершена' : 'Предстоит'}</div>
+        ${!isPast ? `<button class="btn-cancel-booking" onclick="cancelBooking(${booking.id})">Отменить</button>` : ''}
       `;
       
       bookingsList.appendChild(li);
@@ -217,6 +222,25 @@ function renderMyBookings() {
   .catch(error => {
     console.error("Ошибка загрузки записей:", error);
     bookingsList.innerHTML = '<li class="error">Ошибка загрузки данных</li>';
+  });
+}
+
+// Отмена записи
+function cancelBooking(bookingId) {
+  if (!confirm('Вы уверены, что хотите отменить эту запись?')) {
+    return;
+  }
+  
+  axios.delete(`/api/bookings/${bookingId}`, {
+    params: { telegramUserId: window.telegramUserId }
+  })
+  .then(response => {
+    alert('Запись успешно отменена');
+    renderMyBookings(); // Обновляем список
+  })
+  .catch(error => {
+    console.error("Ошибка отмены записи:", error);
+    alert("Произошла ошибка при отмене записи");
   });
 }
 
@@ -274,12 +298,29 @@ function selectDate(date, button) {
   renderTimeSlots();
 }
 
+// Проверка доступности временного слота
+async function checkTimeSlotAvailability(systemId, dateStr, timeSlot) {
+  try {
+    const response = await axios.get('/api/bookings/availability', {
+      params: {
+        systemId: systemId,
+        date: dateStr,
+        time: timeSlot
+      }
+    });
+    return response.data.available;
+  } catch (error) {
+    console.error("Ошибка проверки доступности:", error);
+    return false;
+  }
+}
+
 // Рендеринг временных слотов с учетом часов работы выбранной системы
-function renderTimeSlots() {
+async function renderTimeSlots() {
   if (!selectedSystem || !selectedDate) return;
   
   const slotsContainer = document.getElementById('time-slots');
-  slotsContainer.innerHTML = '';
+  slotsContainer.innerHTML = '<div class="loading">Загрузка доступных слотов...</div>';
   document.getElementById('time-heading').classList.remove('hidden');
   
   // Парсим время работы системы (формат "HH:MM-HH:MM")
@@ -309,14 +350,32 @@ function renderTimeSlots() {
     }
   }
   
-  // Создаем кнопки для каждого временного слота
-  slots.forEach(slot => {
+  // Форматируем дату для проверки доступности
+  const year = selectedDate.getFullYear();
+  const month = ('0' + (selectedDate.getMonth() + 1)).slice(-2);
+  const day = ('0' + selectedDate.getDate()).slice(-2);
+  const formattedDate = `${year}-${month}-${day}`;
+  
+  // Очищаем контейнер слотов
+  slotsContainer.innerHTML = '';
+  
+  // Проверяем доступность каждого слота и создаем кнопки
+  for (const slot of slots) {
+    const isAvailable = await checkTimeSlotAvailability(selectedSystem.id, formattedDate, slot);
+    
     const slotBtn = document.createElement('button');
     slotBtn.textContent = slot;
     slotBtn.classList.add('time-btn');
-    slotBtn.onclick = () => selectTime(slot, slotBtn);
+    
+    if (isAvailable) {
+      slotBtn.onclick = () => selectTime(slot, slotBtn);
+    } else {
+      slotBtn.classList.add('disabled');
+      slotBtn.disabled = true;
+    }
+    
     slotsContainer.appendChild(slotBtn);
-  });
+  }
 }
 
 // Выбор времени записи
@@ -355,8 +414,13 @@ function confirmBooking() {
       showSection('welcome-section');
     })
     .catch(error => {
-      console.error("Ошибка создания записи:", error);
-      alert("Произошла ошибка при создании записи");
+      if (error.response && error.response.data && error.response.data.error === "time_slot_not_available") {
+        alert("Выбранное время уже занято. Пожалуйста, выберите другое время.");
+        renderTimeSlots(); // Обновляем слоты
+      } else {
+        console.error("Ошибка создания записи:", error);
+        alert("Произошла ошибка при создании записи");
+      }
     });
 }
 
