@@ -203,24 +203,37 @@ function renderMyBookings() {
         const li = document.createElement('li');
         li.className = 'booking-item';
         
-        // Отладочный вывод - чтобы увидеть структуру данных с сервера
+        // Отладочный вывод для проверки структуры данных
         console.log("Данные записи с сервера:", booking);
         
-        // Используем данные именно в том формате, как они приходят с сервера
         const systemName = booking.systemName || 'Неизвестная система';
+        
+        // Правильное преобразование строки даты/времени
+        let bookingDate = new Date(booking.bookingTime);
+        let formattedDate = '';
+        
+        // Проверяем, правильно ли создался объект даты
+        if (isNaN(bookingDate.getTime())) {
+          // Если нет, то используем строку как есть
+          formattedDate = booking.bookingTime;
+        } else {
+          // Форматируем дату без учета часового пояса
+          const day = ('0' + bookingDate.getDate()).slice(-2);
+          const month = ('0' + (bookingDate.getMonth() + 1)).slice(-2);
+          const year = bookingDate.getFullYear();
+          const hours = ('0' + bookingDate.getHours()).slice(-2);
+          const minutes = ('0' + bookingDate.getMinutes()).slice(-2);
+          
+          formattedDate = `${day}.${month}.${year} ${hours}:${minutes}`;
+        }
         
         // Определяем, прошла ли запись по текущей дате
         const now = new Date();
-        const bookingTimestamp = new Date(booking.bookingTime);
-        const isPast = bookingTimestamp < now;
-        
-        // Простое форматирование даты из строки - просто отображаем как есть
-        // Предполагаем, что с сервера приходит строка формата "YYYY-MM-DD HH:MM:SS"
-        const timeStr = booking.bookingTime;
+        const isPast = bookingDate < now && !isNaN(bookingDate.getTime());
         
         li.innerHTML = `
           <div class="booking-system">${systemName}</div>
-          <div class="booking-time">${timeStr}</div>
+          <div class="booking-time">${formattedDate}</div>
           <div class="booking-status ${isPast ? 'past' : 'upcoming'}">${isPast ? 'Завершена' : 'Предстоит'}</div>
           ${!isPast ? `<button class="btn-cancel-booking" onclick="cancelBooking(${booking.id})">Отменить</button>` : ''}
         `;
@@ -232,8 +245,7 @@ function renderMyBookings() {
       console.error("Ошибка загрузки записей:", error);
       bookingsList.innerHTML = '<li class="error">Ошибка загрузки данных</li>';
     });
-  }
-
+}
 // Отмена записи
 function cancelBooking(bookingId) {
   if (!confirm('Вы уверены, что хотите отменить эту запись?')) {
