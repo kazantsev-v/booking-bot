@@ -184,58 +184,61 @@ function openMyBookings() {
 
 // Отображение списка записей пользователя
 function renderMyBookings() {
-  const bookingsList = document.getElementById('booking-list');
-  bookingsList.innerHTML = '<li class="loading">Загрузка записей...</li>';
-  
-  axios.get('/api/bookings', {
-    params: { telegramUserId: window.telegramUserId }
-  })
-  .then(response => {
-    const bookings = response.data;
-    bookingsList.innerHTML = '';
+    const bookingsList = document.getElementById('booking-list');
+    bookingsList.innerHTML = '<li class="loading">Загрузка записей...</li>';
     
-    if (bookings.length === 0) {
-      bookingsList.innerHTML = '<li class="no-bookings">У вас нет активных записей</li>';
-      return;
-    }
-    
-    bookings.forEach(booking => {
+    axios.get('/api/bookings', {
+      params: { telegramUserId: window.telegramUserId }
+    })
+    .then(response => {
+      const bookings = response.data;
+      bookingsList.innerHTML = '';
+      
+      if (bookings.length === 0) {
+        bookingsList.innerHTML = '<li class="no-bookings">У вас нет активных записей</li>';
+        return;
+      }
+      
+      bookings.forEach(booking => {
         const li = document.createElement('li');
         li.className = 'booking-item';
       
-        // Используем дату, как есть из базы
-        const bookingTime = new Date(booking.bookingTime);
+        // Получаем исходную дату и время из базы
+        const bookingTimeStr = booking.bookingDate + 'T' + booking.bookingTime;
+        // Создаем объект Date без преобразования в UTC
+        const bookingTimeParts = bookingTimeStr.split(/[T:-]/);
+        const year = parseInt(bookingTimeParts[0]);
+        const month = parseInt(bookingTimeParts[1]) - 1; // Месяцы в JS начинаются с 0
+        const day = parseInt(bookingTimeParts[2]);
+        const hour = parseInt(bookingTimeParts[3]);
+        const minute = parseInt(bookingTimeParts[4] || 0);
+        
+        // Создаем дату, явно указывая, что это локальное время
+        const bookingTime = new Date(year, month, day, hour, minute);
         const systemName = booking.systemName || 'Неизвестная система';
       
         const now = new Date();
         const isPast = bookingTime < now;
       
-        // Форматируем без изменения временной зоны
-        const ekbTime = new Intl.DateTimeFormat('ru-RU', {
-          timeZone: 'Asia/Yekaterinburg', // Отображаем в Екб, но не меняем саму дату
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit'
-        }).format(bookingTime);
+        // Форматируем время для отображения
+        const formattedDate = `${day.toString().padStart(2, '0')}.${(month + 1).toString().padStart(2, '0')}.${year}`;
+        const formattedTime = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
       
         li.innerHTML = `
           <div class="booking-system">${systemName}</div>
-          <div class="booking-time">${ekbTime}</div>
+          <div class="booking-time">${formattedDate} ${formattedTime}</div>
           <div class="booking-status ${isPast ? 'past' : 'upcoming'}">${isPast ? 'Завершена' : 'Предстоит'}</div>
           ${!isPast ? `<button class="btn-cancel-booking" onclick="cancelBooking(${booking.id})">Отменить</button>` : ''}
         `;
       
         bookingsList.appendChild(li);
-      });      
-  })
-  .catch(error => {
-    console.error("Ошибка загрузки записей:", error);
-    bookingsList.innerHTML = '<li class="error">Ошибка загрузки данных</li>';
-  });
-}
+      });
+    })
+    .catch(error => {
+      console.error("Ошибка загрузки записей:", error);
+      bookingsList.innerHTML = '<li class="error">Ошибка загрузки данных</li>';
+    });
+  }
 
 // Отмена записи
 function cancelBooking(bookingId) {
