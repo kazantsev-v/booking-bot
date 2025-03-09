@@ -202,35 +202,29 @@ function renderMyBookings() {
       bookings.forEach(booking => {
         const li = document.createElement('li');
         li.className = 'booking-item';
-      
-        // Получаем исходную дату и время из базы
-        const bookingTimeStr = booking.bookingDate + 'T' + booking.bookingTime;
-        // Создаем объект Date без преобразования в UTC
-        const bookingTimeParts = bookingTimeStr.split(/[T:-]/);
-        const year = parseInt(bookingTimeParts[0]);
-        const month = parseInt(bookingTimeParts[1]) - 1; // Месяцы в JS начинаются с 0
-        const day = parseInt(bookingTimeParts[2]);
-        const hour = parseInt(bookingTimeParts[3]);
-        const minute = parseInt(bookingTimeParts[4] || 0);
         
-        // Создаем дату, явно указывая, что это локальное время
-        const bookingTime = new Date(year, month, day, hour, minute);
+        // Отладочный вывод - чтобы увидеть структуру данных с сервера
+        console.log("Данные записи с сервера:", booking);
+        
+        // Используем данные именно в том формате, как они приходят с сервера
         const systemName = booking.systemName || 'Неизвестная система';
-      
+        
+        // Определяем, прошла ли запись по текущей дате
         const now = new Date();
-        const isPast = bookingTime < now;
-      
-        // Форматируем время для отображения
-        const formattedDate = `${day.toString().padStart(2, '0')}.${(month + 1).toString().padStart(2, '0')}.${year}`;
-        const formattedTime = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-      
+        const bookingTimestamp = new Date(booking.bookingTime);
+        const isPast = bookingTimestamp < now;
+        
+        // Простое форматирование даты из строки - просто отображаем как есть
+        // Предполагаем, что с сервера приходит строка формата "YYYY-MM-DD HH:MM:SS"
+        const timeStr = booking.bookingTime;
+        
         li.innerHTML = `
           <div class="booking-system">${systemName}</div>
-          <div class="booking-time">${formattedDate} ${formattedTime}</div>
+          <div class="booking-time">${timeStr}</div>
           <div class="booking-status ${isPast ? 'past' : 'upcoming'}">${isPast ? 'Завершена' : 'Предстоит'}</div>
           ${!isPast ? `<button class="btn-cancel-booking" onclick="cancelBooking(${booking.id})">Отменить</button>` : ''}
         `;
-      
+        
         bookingsList.appendChild(li);
       });
     })
