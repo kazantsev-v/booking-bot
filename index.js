@@ -21,7 +21,6 @@ const bot = new Telegraf(TELEGRAM_BOT_TOKEN, {
 
 bot.start(async (ctx) => {
     ctx.reply("Добро пожаловать! Вы можете создать свою систему бронирования или воспользоваться существующими.");
-    ctx.reply("Используйте /create для создания новой системы бронирования.");
 });
 
 app.use(morgan("dev"));
